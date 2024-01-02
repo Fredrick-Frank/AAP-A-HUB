@@ -1,0 +1,284 @@
+AAP: 
+AAP - ANSIBLE AUTOMATION PLATFORM
+
+Steps: 
+* download the automation plaform setup and bundle file  archive file
+* tar -xvf [tar-file]
+* install postgresql
+- yum install postgresql-server
+- sudo postgresql-setup initdb
+- sudo systemctl start postgresql
+- sudo systemctl enable postgresql
+- sudo systemctl status postgresql
+
+* sudo su - postgres
+* psql -U postgres -l 
+
+Configure the inventory file of the extracted tar-file
+# Automation Controller Nodes
+# There are two valid node_types that can be assigned for this group.
+# A node_type=control implies that the node will only be able to run
+# project and inventory updates, but not regular jobs.
+# A node_type=hybrid will have the ability to run everything.
+# If you do not define the node_type, it defaults to hybrid.
+#
+# control.example node_type=control
+# hybrid.example  node_type=hybrid
+# hybrid2.example <- this will default to hybrid
+[automationcontroller]
+192.168.0.168
+[automationcontroller:vars]
+peers=execution_nodes
+
+
+# Execution Nodes
+# There are two valid node_types that can be assigned for this group.
+# A node_type=hop implies that the node will forward jobs to an execution node.
+# A node_type=execution implies that the node will be able to run jobs.
+# If you do not define the node_type, it defaults to execution.
+#
+# hop.example        node_type=hop
+# execution.example  node_type=execution
+# execution2.example <- this will default to execution
+[execution_nodes]
+
+[automationhub]
+192.168.0.170
+[automationedacontroller]
+[database]
+192.168.0.168
+# Single Sign-On
+# If sso_redirect_host is set, that will be used for application to connect to
+# SSO for authentication. This must be reachable from client machines.
+#
+# ssohost.example sso_redirect_host=<host/ip>
+[sso]
+
+[all:vars]
+admin_password='passw0rd'
+
+pg_host='192.168.0.168'
+pg_port=5432
+
+pg_database='awx'
+pg_username='awx'
+pg_password='passw0rd'
+pg_sslmode='prefer'  # set to 'verify-full' for client-side enforced SSL
+
+# Managed Postgres Options
+
+# If you wish to install AAP with a single managed postgres server and would
+# like to modify the port for postgres, set the following variable. Note that 
+# the *pg_port variables for the components should be changed to match the 
+# value set by this variable if you wish to connect that component to this
+# managed postgres database server.
+
+# install_pg_port=5432
+# Execution Environment Configuration
+#
+
+# Credentials for container registry to pull execution environment images from,
+# registry_username and registry_password are required for registry.redhat.io
+#
+# When deployed with Automation Hub:
+# - The installer will push execution environment images to Automation Hub and
+#   configure Automation Controller to pull images from the Hub registry.
+# - To make Hub to be the only registry to pull execution environment images from,
+#   set 'ee_from_hub_only' to True. This is set to True by default when bundle
+#   installer is used.
+
+registry_url='registry.redhat.io'
+registry_username='fredrick'
+registry_password='passw0rd'
+# ee_from_hub_only =
+
+# If you wish to add Ansible Engine 2.9 execution environment, set the following variable to true.
+# However this is only available for x86_64 architecture.
+
+# ee_29_enabled=false
+
+# Receptor Configuration
+#
+receptor_listener_port=27199
+
+# Automation Hub Configuration
+#
+
+automationhub_admin_password=''
+automationhub_pg_host=''
+automationhub_pg_port=5432
+
+automationhub_pg_database='automationhub'
+automationhub_pg_username='automationhub'
+automationhub_pg_password=''
+automationhub_pg_sslmode='prefer'
+
+# Set to True to overwrite existing admin password.
+#
+# automationhub_force_change_admin_password = False
+
+# The main automation hub URL that clients will connect to (e.g. https://<load balancer host>).
+# If not specified, the first node in the [automationhub] group will be used when needed.
+#
+# automationhub_main_url = ''
+
+# By default when one uploads collections to Automation Hub
+# an admin needs to approve it before it is made available
+# to the users. If one wants to disable the content approval
+# flow, the following setting should be set to False.
+#
+# automationhub_require_content_approval = True
+
+# At import time collections can go through a series of checks.
+# Behaviour is driven by galaxy-importer.cfg configuration.
+# Example are ansible-doc, ansible-lint, flake8, ...
+#
+# The following parameter allow one to drive this configuration.
+# This variable is expected to be a dictionary.
+__________________________________________________________________________________________________________________________________________________________
+
+Next: ./setup.sh -e ignore_preflight_errors=true  ------ to initiate the installation script 
+The command: 
+./setup.sh -e ignore_preflight_errors=true is used to run the script setup.sh with the environment variable ignore_preflight_errors set to true.
+This means that the script will continue to run even if there are preflight errors.
+
+
+Feature	            Automation controller	                     Automation hub	                            Event-driven Ansible
+Primary function	Manage and execute Ansible content	   Centralize Ansible content and execution data	Automate tasks in response to events
+User interface	    Web interface and REST API	                 Web interface	                                  Web interface
+Integration	     Integrates with other IT management tools	Integrates with other IT management tools	        Integrates with event sources
+Use cases	     Managing and executing Ansible playbooks	Storing and organizing Ansible content	       Automating IT tasks in response to events
+
+
+AAP AUTOMATION STEPS:
+#subscription-manager repos ----- to list all repository and repo ID
+# subscription-manager list --available ---- to view the pool ID
+# subscription-manager repos --enable ansible-automation-platform-2.4-for-rhel-9-x86_64-rpms ---- enable the automation plaform rpms
+# install postgresql-server & nginx 
+
+chap1lab: 
+Initial Configuration of automation controller and private automation hub:
+>> Outcomes
+* Upload automation execution environments to private automation hub.
+* Create namespaces for automation content collections on private automation hub.
+* Upload automation content collections to private automation hub.
+* Modify existing automation controller resources.
+* Launch an automation controller job template.
+
+> lab start install-configuration
+> cd ~/certified-EEs/
+> skopeo login [remote registry url]
+> set the hub and aap shell variables:
+> HUB="ip-address"
+> AAP="ansible-automation-platform-22"
+> skopeo copy docker-archive:ee-29-rhel8.tgz docker://${HUB}/${AAP}/ee-29-rhel8:latest
+> skopeo copy docker-archive:ee-minimal-rhel8.tgz docker://${HUB}/${AAP}/ee-minimal-rhel8:latest
+> skopeo copy docker-archive:ee-supported-rhel8.tgz docker://${HUB}/${AAP}/ee-supported-rhel8:latest
+
+
+> Using Podman:
+> podman load -i ee-supported-rhel8.tgz  ----- to load the container image stored in "ee-supported-rhel8.tgz"
+
+tagging using the podman from redhat registry to a local image:
+> podman tag registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8 hub.lab.example.com/ansible-automation-platform-22/ee-supported-rhel8
+
+pushing a local container image to a container registry:
+> podman push hub.lab.example.com/ansible-automation-platform-22/ee-supported-rhel8
+
+
+chapter2:
+
+Chap 4: lab
+
+Current Host: {{ ansible_facts['fqdn'] }} <br>
+Host IP Address: {{ ansible_facts['default_ipv4']['address'] }} <br>
+Server list: <br>
+{% for host in groups['all'] %}
+{{ host }} <br>
+{% endfor %}
+
+
+git command:
+  git init
+  git add README.md
+  git commit -m "first commit"
+  git branch -M main
+  git remote add origin https://github.com/Fredrick-Frank/ansible-playbooks.git
+  git push -u origin main
+  
+to push existing repo:
+git remote add origin https://github.com/Fredrick-Frank/ansible-playbooks.git
+git branch -M main
+git push -u origin main
+
+Lab1: 
+Automation Mesh:
+[automationcontroller]
+controller.lab.example.com
+control2.lab.example.com
+
+[automationcontroller:vars] 
+node_type=control
+web_server_ssl_cert=/home/student/certs/{{ inventory_hostname }}.crt
+web_server_ssl_key=/home/student/certs/{{ inventory_hostname }}.key
+
+[execution_nodes] 
+exec1.lab.example.com peers=automationcontroller
+exec2.lab.example.com peers=hop1.lab.example.com
+exec3.lab.example.com peers=hop1.lab.example.com
+hop1.lab.example.com node_type=hop peers=automationcontroller
+
+[instance_group_local] 
+exec1.lab.example.com
+exec2.lab.example.com
+
+[instance_group_remote] 
+exec3.lab.example.com
+
+[instance_group_remote:vars]
+peers=hop 
+
+[hop] 
+hop1.lab.example.com
+
+[hop:vars] 
+node_type=hop
+peers=automationcontroller
+
+Automation Mesh: 
+RUN: ./setup.sh -- --tag generate_dot_file ---- to generate a topology file
+# sudo yum install graphviz --- to install graphviz rpms
+# dot -Tjpg mesh-topology.dot -o graph-topology.jpg  ---- to make a jpg file
+# ./setup.sh -e ignore_preflight_errors=true ---- to ignore error preflights
+
+
+Lab3: Uploading to the hub and pulling from hub:
+> skopeo login hub.lab.example.com
+> skopeo login --tls-verify=false Hub_ip
+
+
+To upload the image to the hub:
+> skopeo copy docker-archive:ee-29-rhel8.tgz docker://hub.lab.example.com/ansible-automation-platform-22/ee-29-rhel8:latest
+> skopeo copy docker-archive:ee-minimal-rhel8.tgz docker://hub.lab.example.com/ansible-automation-platform-22/ee-minimal-rhel8:latest
+> skopeo copy docker-archive:ee-supported-rhel8.tgz docker://hub.lab.example.com/ansible-automation-platform-22/ee-supported-rhel8:latest
+
+To inspect the image:
+> skopeo inspect docker-archive:ee-29-rhel8.tgz --format "{{ .Labels.version }}-{{ .Labels.release }}" 1.0.0-119
+> skopeo inspect docker-archive:ee-minimal-rhel8.tgz --format "{{ .Labels.version }}-{{ .Labels.release }}" 1.0.0-128
+> skopeo inspect docker-archive:ee-supported-rhel8.tgz --format "{{ .Labels.version }}-{{ .Labels.release }}" 1.0.0-99
+
+To download the container image from the hub to the terminal:
+> podman pull hub.lab.example.com/ansible-automation-platform-22/ee-29-rhel8:1.0.0-119
+> podman pull hub.lab.example.com/ansible-automation-platform-22/ee-minimal-rhel8:1.0.0-128
+> podman pull hub.lab.example.com/ansible-automation-platform-22/ee-supported-rhel8:1.0.0-99
+
+TO VIEW IMAGES:
+> podman images
+ 
+TO manually add a playbook to the AAP:
+- cd /var/lib/awx/projects
+- mkdir play_project , 
+- chown user-name [file/directory]
+- chgrp group-name [file/directory]
+- cd play_project
+- vi playbook.yml
